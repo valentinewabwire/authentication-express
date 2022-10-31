@@ -21,7 +21,7 @@ app.use(express.static("public"));
 /* This is a middleware that is being used to create a session for the user. */
 app.use(
   session({
-    secret: "Our little Secret.",
+    secret: process.env.SECRET_HASH,
     resave: false,
     saveUninitialized: false,
   })
