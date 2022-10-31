@@ -1,9 +1,10 @@
-/* Importing the express module. */
+/* Importing the modules that we need to use in our application. */
+require("dotenv").config();
 const express = require("express");
-/* A middleware that parses the body of the request. */
 const bodyParser = require("body-parser");
-/* Importing the ejs module. */
 const ejs = require("ejs");
+const mongoose = require("mongoose");
+const md5 = require("md5");
 
 /* Creating an instance of the express module. */
 const app = express();
@@ -15,6 +16,18 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 /* Telling the server to use the public folder as a static folder. */
 app.use(express.static("public"));
+
+/* Connecting to the database. */
+mongoose.connect("mongodb://localhost:27017/userDB");
+
+/* Creating a new schema for the users collection. */
+const userSchema = new mongoose.Schema({
+  email: String,
+  password: String,
+});
+
+/* Creating a new model called User. */
+const User = new mongoose.model("User", userSchema);
 
 /* Telling the server to render the home.ejs file when the user visits the root route. */
 app.get("/", function (req, res) {
@@ -29,6 +42,37 @@ app.get("/login", function (req, res) {
 /* Telling the server to render the register.ejs file when the user visits the /register route. */
 app.get("/register", function (req, res) {
   res.render("register");
+});
+
+/* Creating a new user and saving it to the database. */
+app.post("/register", function (req, res) {
+  const newUser = new User({
+    email: req.body.username,
+    password: md5(req.body.password),
+  });
+  newUser.save(function (err) {
+    if (err) {
+      console.log(err);
+    } else {
+      res.render("secrets");
+    }
+  });
+});
+
+app.post("/login", function (req, res) {
+  const username = req.body.username;
+  const password = md5(req.body.password);
+  User.findOne({ email: username }, function (err, foundUser) {
+    if (err) {
+      console.log(err);
+    } else {
+      if (foundUser) {
+        if (foundUser.password === password) {
+          res.render("secrets");
+        }
+      }
+    }
+  });
 });
 
 /* Telling the server to listen on port 3000. */
